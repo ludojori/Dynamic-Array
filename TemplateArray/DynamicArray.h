@@ -50,53 +50,60 @@ namespace dynamic
 	template<class T>
 	inline void array<T>::expand()
 	{
-		m_cap++;
-		T* tempArr = new T[m_cap];
-		for (size_t i = 0; i < m_size; i++)
+		m_cap *= 2;
+		T* temp = (T*)realloc(m_data, m_cap * sizeof(T));
+
+		if (temp)
 		{
-			tempArr[i] = m_data[i];
+			m_data = temp;
 		}
-		delete[] m_data;
-		m_data = tempArr;
-	}
-
-	template<class T>
-	inline array<T>::array()
-	{
-		m_size = 0;
-		m_cap = 1;
-		m_data = new T[m_cap];
-	}
-
-	template<class T>
-	inline array<T>::array(const array<T>& dynArray)
-	{
-		if (this != &dynArray)
+		else
 		{
-			delete[] m_data;
-			m_size = dynArray.m_size;
-			m_cap = dynArray.m_cap;
-			m_data = new T[m_cap];
-			for (size_t i = 0; i < m_size; i++)
-			{
-				m_data[i] = dynArray[i];
-			}
+			throw std::bad_alloc();
 		}
 	}
 
 	template<class T>
-	inline array<T>::array(array<T>&& dynArray)
+	inline array<T>::array() : m_size(0), m_cap(1)
 	{
-		if (this == &dynArray)
+		m_data = (T*)malloc(m_cap * sizeof(T));
+	}
+
+	template<class T>
+	inline array<T>::array(const array<T>& dynArray) : m_size(dynArray.m_size), m_cap(dynArray.m_cap)
+	{
+		m_data = (T*)malloc(m_cap * sizeof(T));
+		std::memcpy(m_data, dynArray.m_data, m_cap * sizeof(T));
+	}
+
+	template<class T>
+	inline array<T>::array(array<T>&& dynArray) : m_size(dynArray.m_size), m_cap(dynArray.m_cap)
+	{
+		m_data = dynArray.m_data;
+		dynArray.m_data = nullptr;
+		dynArray.m_size = 0;
+		dynArray.m_cap = 1;
+	}
+
+	template<class T>
+	inline array<T>& array<T>::operator=(const array<T>& other)
+	{
+		if (this == &other)
 		{
 			return *this;
 		}
 
-		if (dynArray.m_size == 0)
+		if (other.m_size == 0)
 		{
-			delete[] m_data;
+			for (size_t i = 0; i < m_cap; i++)
+			{
+				m_data[i].~T();
+			}
+
+			free(m_data);
 			m_size = 0;
 			m_cap = 1;
+
 			return *this;
 		}
 
@@ -106,50 +113,32 @@ namespace dynamic
 			{
 				m_data[i].~T();
 			}
-			delete[] m_data;
+
+			free(m_data);
 		}
 
-		m_data = dynArray.m_data;
-		m_size = dynArray.m_size;
-		m_cap = dynArray.m_cap;
-
-		dynArray.m_data = nullptr;
-		dynArray.m_size = 0;
-		dynArray.m_cap = 1;
+		m_size = other.m_size;
+		m_cap = other.m_cap;
+		m_data = (T*)malloc(m_cap * sizeof(T));
+		std::memcpy(m_data, other.m_data, m_cap * sizeof(T));
 
 		return *this;
 	}
 
 	template<class T>
-	inline array<T>& array<T>::operator=(const array<T>& dynArray)
+	inline array<T>& array<T>::operator=(array<T>&& other)
 	{
-		if (this != &dynArray)
-		{
-			delete[] m_data;
-			m_size = dynArray.m_size;
-			m_cap = dynArray.m_cap;
-			m_data = new T[m_cap];
-			for (size_t i = 0; i < m_size; i++)
-			{
-				m_data[i] = dynArray[i];
-			}
-		}
-		return *this;
-	}
-
-	template<class T>
-	inline array<T>& array<T>::operator=(array<T>&& dynArray)
-	{
-		if (this == &dynArray)
+		if (this == &other)
 		{
 			return *this;
 		}
 
-		if (dynArray.m_size == 0)
+		if (other.m_size == 0)
 		{
-			delete[] m_data;
+			free(m_data);
 			m_size = 0;
 			m_cap = 1;
+			
 			return *this;
 		}
 
@@ -159,16 +148,17 @@ namespace dynamic
 			{
 				m_data[i].~T();
 			}
-			delete[] m_data;
+
+			free(m_data);
 		}
 
-		m_data = dynArray.m_data;
-		m_size = dynArray.m_size;
-		m_cap = dynArray.m_cap;
+		m_data = other.m_data;
+		m_size = other.m_size;
+		m_cap = other.m_cap;
 
-		dynArray.m_data = nullptr;
-		dynArray.m_size = 0;
-		dynArray.m_cap = 1;
+		other.m_data = nullptr;
+		other.m_size = 0;
+		other.m_cap = 1;
 
 		return *this;
 	}
@@ -321,7 +311,14 @@ namespace dynamic
 	template<class T>
 	inline array<T>::~array()
 	{
-		delete[] m_data;
+		for (size_t i = 0; i < m_cap; i++)
+		{
+			m_data[i].~T();
+		}
+
+		free(m_data);
+		m_size = 0;
+		m_cap = 0;
 	}
 
 }
