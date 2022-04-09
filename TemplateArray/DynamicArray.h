@@ -1,5 +1,6 @@
 #pragma once
 #include <iostream>
+#include <exception>
 
 namespace dynamic
 {
@@ -19,10 +20,12 @@ namespace dynamic
 
 		array();
 		array(const array<T>&);
+		array(array<T>&&);
 
 		// OPERATORS
 
 		array<T>& operator=(const array<T>&);
+		array<T>& operator=(array<T>&&);
 		T& operator[](size_t) const;
 		bool operator<(const array<T>&) const;
 		bool operator>(const array<T>&) const;
@@ -82,6 +85,42 @@ namespace dynamic
 	}
 
 	template<class T>
+	inline array<T>::array(array<T>&& dynArray)
+	{
+		if (this == &dynArray)
+		{
+			return *this;
+		}
+
+		if (dynArray._size == 0)
+		{
+			delete[] _arr;
+			_size = 0;
+			_cap = 1;
+			return *this;
+		}
+
+		if (_arr != nullptr)
+		{
+			for (size_t i = 0; i < _cap; i++)
+			{
+				_arr[i].~T();
+			}
+			delete[] _arr;
+		}
+
+		_arr = dynArray._arr;
+		_size = dynArray._size;
+		_cap = dynArray._cap;
+
+		dynArray._arr = nullptr;
+		dynArray._size = 0;
+		dynArray._cap = 1;
+
+		return *this;
+	}
+
+	template<class T>
 	inline array<T>& array<T>::operator=(const array<T>& dynArray)
 	{
 		if (this != &dynArray)
@@ -95,6 +134,42 @@ namespace dynamic
 				_arr[i] = dynArray[i];
 			}
 		}
+		return *this;
+	}
+
+	template<class T>
+	inline array<T>& array<T>::operator=(array<T>&& dynArray)
+	{
+		if (this == &dynArray)
+		{
+			return *this;
+		}
+
+		if (dynArray._size == 0)
+		{
+			delete[] _arr;
+			_size = 0;
+			_cap = 1;
+			return *this;
+		}
+
+		if (_arr != nullptr)
+		{
+			for (size_t i = 0; i < _cap; i++)
+			{
+				_arr[i].~T();
+			}
+			delete[] _arr;
+		}
+
+		_arr = dynArray._arr;
+		_size = dynArray._size;
+		_cap = dynArray._cap;
+
+		dynArray._arr = nullptr;
+		dynArray._size = 0;
+		dynArray._cap = 1;
+
 		return *this;
 	}
 
