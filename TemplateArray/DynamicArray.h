@@ -8,9 +8,9 @@ namespace dynamic
 	class array
 	{
 	private:
-		T* _arr;
-		size_t _size;
-		size_t _cap;
+		T* m_data;
+		size_t m_size;
+		size_t m_cap;
 
 		void expand();
 
@@ -50,22 +50,22 @@ namespace dynamic
 	template<class T>
 	inline void array<T>::expand()
 	{
-		_cap++;
-		T* tempArr = new T[_cap];
-		for (size_t i = 0; i < _size; i++)
+		m_cap++;
+		T* tempArr = new T[m_cap];
+		for (size_t i = 0; i < m_size; i++)
 		{
-			tempArr[i] = _arr[i];
+			tempArr[i] = m_data[i];
 		}
-		delete[] _arr;
-		_arr = tempArr;
+		delete[] m_data;
+		m_data = tempArr;
 	}
 
 	template<class T>
 	inline array<T>::array()
 	{
-		_size = 0;
-		_cap = 1;
-		_arr = new T[_cap];
+		m_size = 0;
+		m_cap = 1;
+		m_data = new T[m_cap];
 	}
 
 	template<class T>
@@ -73,13 +73,13 @@ namespace dynamic
 	{
 		if (this != &dynArray)
 		{
-			delete[] _arr;
-			_size = dynArray._size;
-			_cap = dynArray._cap;
-			_arr = new T[_cap];
-			for (size_t i = 0; i < _size; i++)
+			delete[] m_data;
+			m_size = dynArray.m_size;
+			m_cap = dynArray.m_cap;
+			m_data = new T[m_cap];
+			for (size_t i = 0; i < m_size; i++)
 			{
-				_arr[i] = dynArray[i];
+				m_data[i] = dynArray[i];
 			}
 		}
 	}
@@ -92,30 +92,30 @@ namespace dynamic
 			return *this;
 		}
 
-		if (dynArray._size == 0)
+		if (dynArray.m_size == 0)
 		{
-			delete[] _arr;
-			_size = 0;
-			_cap = 1;
+			delete[] m_data;
+			m_size = 0;
+			m_cap = 1;
 			return *this;
 		}
 
-		if (_arr != nullptr)
+		if (m_data != nullptr)
 		{
-			for (size_t i = 0; i < _cap; i++)
+			for (size_t i = 0; i < m_cap; i++)
 			{
-				_arr[i].~T();
+				m_data[i].~T();
 			}
-			delete[] _arr;
+			delete[] m_data;
 		}
 
-		_arr = dynArray._arr;
-		_size = dynArray._size;
-		_cap = dynArray._cap;
+		m_data = dynArray.m_data;
+		m_size = dynArray.m_size;
+		m_cap = dynArray.m_cap;
 
-		dynArray._arr = nullptr;
-		dynArray._size = 0;
-		dynArray._cap = 1;
+		dynArray.m_data = nullptr;
+		dynArray.m_size = 0;
+		dynArray.m_cap = 1;
 
 		return *this;
 	}
@@ -125,13 +125,13 @@ namespace dynamic
 	{
 		if (this != &dynArray)
 		{
-			delete[] _arr;
-			_size = dynArray._size;
-			_cap = dynArray._cap;
-			_arr = new T[_cap];
-			for (size_t i = 0; i < _size; i++)
+			delete[] m_data;
+			m_size = dynArray.m_size;
+			m_cap = dynArray.m_cap;
+			m_data = new T[m_cap];
+			for (size_t i = 0; i < m_size; i++)
 			{
-				_arr[i] = dynArray[i];
+				m_data[i] = dynArray[i];
 			}
 		}
 		return *this;
@@ -145,30 +145,30 @@ namespace dynamic
 			return *this;
 		}
 
-		if (dynArray._size == 0)
+		if (dynArray.m_size == 0)
 		{
-			delete[] _arr;
-			_size = 0;
-			_cap = 1;
+			delete[] m_data;
+			m_size = 0;
+			m_cap = 1;
 			return *this;
 		}
 
-		if (_arr != nullptr)
+		if (m_data != nullptr)
 		{
-			for (size_t i = 0; i < _cap; i++)
+			for (size_t i = 0; i < m_cap; i++)
 			{
-				_arr[i].~T();
+				m_data[i].~T();
 			}
-			delete[] _arr;
+			delete[] m_data;
 		}
 
-		_arr = dynArray._arr;
-		_size = dynArray._size;
-		_cap = dynArray._cap;
+		m_data = dynArray.m_data;
+		m_size = dynArray.m_size;
+		m_cap = dynArray.m_cap;
 
-		dynArray._arr = nullptr;
-		dynArray._size = 0;
-		dynArray._cap = 1;
+		dynArray.m_data = nullptr;
+		dynArray.m_size = 0;
+		dynArray.m_cap = 1;
 
 		return *this;
 	}
@@ -176,26 +176,26 @@ namespace dynamic
 	template<class T>
 	inline T& array<T>::operator[](size_t index) const
 	{
-		if (index < 0 || index > _size)
+		if (index < 0 || index > m_size)
 		{
 			std::cout << "!--- ERROR: Out Of Bounds ---!" << std::endl;
 		}
 		else
 		{
-			return _arr[index];
+			return m_data[index];
 		}
 	}
 
 	template<class T>
 	inline bool array<T>::operator<(const array<T>& dynArray) const
 	{
-		_size < dynArray._size ? true : false;
+		m_size < dynArray.m_size ? true : false;
 	}
 
 	template<class T>
 	inline bool array<T>::operator>(const array<T>& dynArray) const
 	{
-		_size > dynArray._size ? true : false;
+		m_size > dynArray.m_size ? true : false;
 	}
 
 	template<class T>
@@ -205,9 +205,9 @@ namespace dynamic
 		{
 			return false;
 		}
-		for (size_t i = 0; i < _size; i++)
+		for (size_t i = 0; i < m_size; i++)
 		{
-			if (_arr[i] != dynArray[i])
+			if (m_data[i] != dynArray[i])
 			{
 				return false;
 			}
@@ -234,18 +234,18 @@ namespace dynamic
 	template<class T>
 	inline void array<T>::add(T value)
 	{
-		if (_size == _cap)
+		if (m_size == m_cap)
 		{
 			expand();
 		}
-		_size++;
-		_arr[_size - 1] = value;
+		m_size++;
+		m_data[m_size - 1] = value;
 	}
 
 	template<class T>
 	inline void array<T>::generate(T value, size_t length)
 	{
-		if (length < 0 || length > _cap)
+		if (length < 0 || length > m_cap)
 		{
 			std::cout << "!--- ERROR: Out Of Bounds ---!" << std::endl;
 			return;
@@ -254,39 +254,39 @@ namespace dynamic
 		{
 			expand();
 		}
-		std::cout << _cap << std::endl;
-		_size = _size + length;
-		for (size_t i = _size - length; i < _size; i++)
+		std::cout << m_cap << std::endl;
+		m_size = m_size + length;
+		for (size_t i = m_size - length; i < m_size; i++)
 		{
-			_arr[i] = value;
+			m_data[i] = value;
 		}
 	}
 
 	template<class T>
 	inline void array<T>::remove()
 	{
-		_size--;
-		T* tempArr = new T[_size];
-		for (size_t i = 0; i < _size; i++)
+		m_size--;
+		T* tempArr = new T[m_size];
+		for (size_t i = 0; i < m_size; i++)
 		{
-			tempArr[i] = _arr[i];
+			tempArr[i] = m_data[i];
 		}
-		delete[] _arr;
-		_arr = tempArr;
+		delete[] m_data;
+		m_data = tempArr;
 	}
 
 	template<class T>
 	inline void array<T>::remove(size_t index)
 	{
-		if (index < 0 || index > _size)
+		if (index < 0 || index > m_size)
 		{
 			std::cout << "!--- ERROR: Out Of Bounds! ---!" << std::endl;
 			return;
 		}
-		T* tempArr = new T[_size];
-		for (size_t i = index - 1; i < _size; i++)
+		T* tempArr = new T[m_size];
+		for (size_t i = index - 1; i < m_size; i++)
 		{
-			_arr[i] = _arr[i + 1];
+			m_data[i] = m_data[i + 1];
 		}
 		remove();
 	}
@@ -294,13 +294,13 @@ namespace dynamic
 	template<class T>
 	inline size_t array<T>::size() const
 	{
-		return _size;
+		return m_size;
 	}
 
 	template<class T>
 	inline bool array<T>::empty() const
 	{
-		return _size == 0 ? true : false;
+		return m_size == 0 ? true : false;
 	}
 
 	template<class T>
@@ -312,16 +312,16 @@ namespace dynamic
 			return;
 		}
 		std::cout << "<<< Printing Dynamic Array... >>>" << std::endl << std::endl;
-		for (size_t i = 0; i < _size; i++)
+		for (size_t i = 0; i < m_size; i++)
 		{
-			std::cout << " " << _arr[i];
+			std::cout << " " << m_data[i];
 		}
 	}
 
 	template<class T>
 	inline array<T>::~array()
 	{
-		delete[] _arr;
+		delete[] m_data;
 	}
 
 }
