@@ -2,11 +2,11 @@
 
 int main()
 {
-	dynamic::array<int> intArray;
-	dynamic::array<double> doubleArray;
-	dynamic::array<char> charArray;
+	dynamic::Array<int> intArray;
+	dynamic::Array<double> doubleArray;
+	dynamic::Array<char> charArray;
 
-	intArray.add(5);
+	intArray.push_back(5);
 
 	std::cout << intArray;
 

@@ -1,11 +1,14 @@
-#pragma once
+#ifndef DYNAMIC_ARRAY_H
+#define DYNAMIC_ARRAY_H
+
 #include <iostream>
 #include <exception>
+#include <stdexcept>
 
 namespace dynamic
 {
 	template<class T>
-	class array
+	class Array
 	{
 	private:
 		T* m_data;
@@ -18,37 +21,53 @@ namespace dynamic
 
 		// CONSTRUCTORS
 
-		array();
-		array(const array<T>&);
-		array(array<T>&&);
+		Array();
+		Array(const Array<T>& other);
+		Array(Array<T>&& other);
 
 		// OPERATORS
 
-		array<T>& operator=(const array<T>&);
-		array<T>& operator=(array<T>&&);
-		T& operator[](size_t) const;
-		bool operator<(const array<T>&) const;
-		bool operator>(const array<T>&) const;
-		bool operator==(const array<T>&) const;
-		friend std::ostream& operator<<(std::ostream&, const array<T>&);
+		Array<T>& operator=(const Array<T>& other);
+		Array<T>& operator=(Array<T>&& other);
+		constexpr T& operator[](size_t index);
+		constexpr const T& operator[](size_t index) const;
+		bool operator<(const Array<T>& other) const;
+		bool operator>(const Array<T>& other) const;
+		bool operator==(const Array<T>& other) const;
+		bool operator!=(const Array<T>& other) const;
+		friend std::ostream& operator<<(std::ostream& os, const Array<T>& arr);
 
 		// USEFUL FUNCTIONS
 
-		void add(T);
-		void generate(T, size_t);
-		void remove();
-		void remove(size_t);
-		size_t size() const;
-		bool empty() const;
-		void print() const;
+		constexpr T* data() noexcept;
+		constexpr const T* data() const noexcept;
+		constexpr const T& at(size_t index) const;
+		constexpr void push_back(const T& value);
+		constexpr void push_back(T&& value);
+		template<typename... Args>
+		void emplace_back(Args&&... args);
+		constexpr void pop_back() noexcept;
+		constexpr void pop_front() noexcept;
+		constexpr size_t size() const noexcept;
+		constexpr size_t capacity() const noexcept;
+		constexpr void clear() noexcept;
+		[[nodiscard]] constexpr bool empty() const;
+		constexpr void print() const noexcept;
+		
+		constexpr T& front();
+		constexpr const T& front() const;
+		constexpr T& back();
+		constexpr const T& back() const;
+		T* begin() const;
+		T* end() const;
 
 		// DESTRUCTOR
 
-		~array();
+		~Array();
 	};
 
 	template<class T>
-	inline void array<T>::expand()
+	inline void Array<T>::expand()
 	{
 		m_cap *= 2;
 		T* temp = (T*)realloc(m_data, m_cap * sizeof(T));
@@ -64,29 +83,29 @@ namespace dynamic
 	}
 
 	template<class T>
-	inline array<T>::array() : m_size(0), m_cap(1)
+	inline Array<T>::Array() : m_size(0), m_cap(1)
 	{
 		m_data = (T*)malloc(m_cap * sizeof(T));
 	}
 
 	template<class T>
-	inline array<T>::array(const array<T>& dynArray) : m_size(dynArray.m_size), m_cap(dynArray.m_cap)
+	inline Array<T>::Array(const Array<T>& other) : m_size(other.m_size), m_cap(other.m_cap)
 	{
 		m_data = (T*)malloc(m_cap * sizeof(T));
-		std::memcpy(m_data, dynArray.m_data, m_cap * sizeof(T));
+		std::memcpy(m_data, other.m_data, m_cap * sizeof(T));
 	}
 
 	template<class T>
-	inline array<T>::array(array<T>&& dynArray) : m_size(dynArray.m_size), m_cap(dynArray.m_cap)
+	inline Array<T>::Array(Array<T>&& other) : m_size(other.m_size), m_cap(other.m_cap)
 	{
-		m_data = dynArray.m_data;
-		dynArray.m_data = nullptr;
-		dynArray.m_size = 0;
-		dynArray.m_cap = 1;
+		m_data = other.m_data;
+		other.m_data = nullptr;
+		other.m_size = 0;
+		other.m_cap = 1;
 	}
 
 	template<class T>
-	inline array<T>& array<T>::operator=(const array<T>& other)
+	inline Array<T>& Array<T>::operator=(const Array<T>& other)
 	{
 		if (this == &other)
 		{
@@ -126,7 +145,7 @@ namespace dynamic
 	}
 
 	template<class T>
-	inline array<T>& array<T>::operator=(array<T>&& other)
+	inline Array<T>& Array<T>::operator=(Array<T>&& other)
 	{
 		if (this == &other)
 		{
@@ -164,137 +183,181 @@ namespace dynamic
 	}
 
 	template<class T>
-	inline T& array<T>::operator[](size_t index) const
+	inline constexpr T& Array<T>::operator[](size_t index)
 	{
-		if (index < 0 || index > m_size)
+		return m_data[index];
+	}
+	
+	template<class T>
+	inline constexpr const T& Array<T>::operator[](size_t index) const
+	{
+		if (index < 0 || index >= m_size)
 		{
-			std::cout << "!--- ERROR: Out Of Bounds ---!" << std::endl;
+			throw std::out_of_range;
 		}
-		else
+		return m_data[index];
+	}
+
+	template<class T>
+	inline bool Array<T>::operator<(const Array<T>& other) const
+	{
+		T* this_begin = this->begin();
+		T* this_end = this->end();
+		T* other_begin = other.begin();
+		T* other_end = other.end();
+
+		for (; (this_begin != this_end) && (other_begin != other_end); ++this_begin, ++this_end)
 		{
-			return m_data[index];
+			if (*this_begin < *other_begin) return true;
+			if (*this_begin > *other_begin) return false;
 		}
+
+		return (this_begin == this_end) && (other_begin != other_end);
 	}
 
 	template<class T>
-	inline bool array<T>::operator<(const array<T>& dynArray) const
+	inline bool Array<T>::operator>(const Array<T>& other) const
 	{
-		m_size < dynArray.m_size ? true : false;
+		return !(this->operator<(other));
 	}
 
 	template<class T>
-	inline bool array<T>::operator>(const array<T>& dynArray) const
+	inline bool Array<T>::operator==(const Array<T>& other) const
 	{
-		m_size > dynArray.m_size ? true : false;
-	}
-
-	template<class T>
-	inline bool array<T>::operator==(const array<T>& dynArray) const
-	{
-		if (this < dynArray || this > dynArray)
+		if (this->m_size != other.m_size)
 		{
 			return false;
 		}
+
 		for (size_t i = 0; i < m_size; i++)
 		{
-			if (m_data[i] != dynArray[i])
+			if (m_data[i] != other[i])
 			{
 				return false;
 			}
 		}
+
 		return true;
 	}
 
 	template<class T>
-	inline std::ostream& operator<<(std::ostream& os, array<T>& dynArray)
+	inline bool Array<T>::operator!=(const Array<T>& other) const
 	{
-		if (dynArray.empty())
+		return !(this->operator==(other));
+	}
+
+	template<class T>
+	inline std::ostream& operator<<(std::ostream& os, Array<T>& other)
+	{
+		if (other.empty())
 		{
 			os << "!--- ERROR: Cannot Print - Array Is Empty ---!\n";
 			return os;
 		}
 		os << "<<< Printing Dynamic Array... >>>" << std::endl << std::endl;
-		for (size_t i = 0; i < dynArray.size(); i++)
+		for (size_t i = 0; i < other.size(); i++)
 		{
-			os << " " << dynArray[i];
+			os << " " << other[i];
 		}
 		return os;
 	}
 
 	template<class T>
-	inline void array<T>::add(T value)
+	inline constexpr T* Array<T>::data() noexcept
+	{
+		return m_data;
+	}
+
+	template<class T>
+	inline constexpr const T* Array<T>::data() const noexcept
+	{
+		return m_data;
+	}
+
+	template<class T>
+	inline constexpr const T& Array<T>::at(size_t index) const
+	{
+		if (index >= m_size)
+		{
+			throw std::out_of_range;
+		}
+		return m_data[index];
+	}
+
+	template<class T>
+	inline constexpr void Array<T>::push_back(const T& value)
 	{
 		if (m_size == m_cap)
 		{
 			expand();
 		}
+		m_data[m_size] = value;
 		m_size++;
-		m_data[m_size - 1] = value;
 	}
 
 	template<class T>
-	inline void array<T>::generate(T value, size_t length)
+	inline constexpr void Array<T>::push_back(T&& value)
 	{
-		if (length < 0 || length > m_cap)
-		{
-			std::cout << "!--- ERROR: Out Of Bounds ---!" << std::endl;
-			return;
-		}
-		for (size_t i = 0; i < length; i++)
+		if (m_size == m_cap)
 		{
 			expand();
 		}
-		std::cout << m_cap << std::endl;
-		m_size = m_size + length;
-		for (size_t i = m_size - length; i < m_size; i++)
-		{
-			m_data[i] = value;
-		}
+		m_data[m_size] = std::move(value);
+		m_size++;
 	}
 
 	template<class T>
-	inline void array<T>::remove()
+	inline constexpr void Array<T>::pop_back() noexcept
 	{
-		m_size--;
-		T* tempArr = new T[m_size];
-		for (size_t i = 0; i < m_size; i++)
+		if (m_size > 0)
 		{
-			tempArr[i] = m_data[i];
+			m_size--;
 		}
-		delete[] m_data;
-		m_data = tempArr;
 	}
 
 	template<class T>
-	inline void array<T>::remove(size_t index)
+	inline constexpr void Array<T>::pop_front() noexcept
 	{
-		if (index < 0 || index > m_size)
+		if (m_size > 0)
 		{
-			std::cout << "!--- ERROR: Out Of Bounds! ---!" << std::endl;
-			return;
+			for (size_t i = 1; i < m_size; i++)
+			{
+				m_data[i - 1] = m_data[i];
+			}
+			m_size--;
 		}
-		T* tempArr = new T[m_size];
-		for (size_t i = index - 1; i < m_size; i++)
-		{
-			m_data[i] = m_data[i + 1];
-		}
-		remove();
 	}
 
 	template<class T>
-	inline size_t array<T>::size() const
+	inline constexpr size_t Array<T>::size() const noexcept
 	{
 		return m_size;
 	}
 
 	template<class T>
-	inline bool array<T>::empty() const
+	inline constexpr size_t Array<T>::capacity() const noexcept
+	{
+		return m_cap;
+	}
+
+	template<class T>
+	inline constexpr void Array<T>::clear() noexcept
+	{
+		for (size_t i = 0; i < m_size; i++)
+		{
+			m_data[i].~T();
+		}
+		m_size = 0;
+	}
+
+	template<class T>
+	inline constexpr bool Array<T>::empty() const
 	{
 		return m_size == 0 ? true : false;
 	}
 
 	template<class T>
-	inline void array<T>::print() const
+	inline constexpr void Array<T>::print() const noexcept
 	{
 		if (empty())
 		{
@@ -309,7 +372,43 @@ namespace dynamic
 	}
 
 	template<class T>
-	inline array<T>::~array()
+	inline constexpr T& Array<T>::front()
+	{
+		return m_data[0];
+	}
+
+	template<class T>
+	inline constexpr const T& Array<T>::front() const
+	{
+		return m_data[0];
+	}
+
+	template<class T>
+	inline constexpr T& Array<T>::back()
+	{
+		return m_data[m_size - 1];
+	}
+
+	template<class T>
+	inline constexpr const T& Array<T>::back() const
+	{
+		return m_data[m_size - 1];
+	}
+
+	template<class T>
+	inline T* Array<T>::begin() const
+	{
+		return m_data;
+	}
+	
+	template<class T>
+	inline T* Array<T>::end() const
+	{
+		return m_data + m_size;
+	}
+
+	template<class T>
+	inline Array<T>::~Array()
 	{
 		for (size_t i = 0; i < m_cap; i++)
 		{
@@ -320,6 +419,18 @@ namespace dynamic
 		m_size = 0;
 		m_cap = 0;
 	}
+	template<class T>
+	template<typename ...Args>
+	inline void Array<T>::emplace_back(Args && ...args)
+	{
+		if (m_size == m_cap)
+		{
+			expand();
+		}
 
+		m_data[m_size] = T(std::forward<Args>(arg)...);
+		m_size++;
+	}
 }
 
+#endif
